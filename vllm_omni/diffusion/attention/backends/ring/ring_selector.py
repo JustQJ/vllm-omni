@@ -20,6 +20,7 @@ from .ring_kernels import (
     flash_attn_forward_aiter,
     flashinfer_attn_forward,
     pytorch_attn_forward,
+    npu_attn_forward
 )
 
 if HAS_SAGE_ATTENTION:
@@ -160,7 +161,7 @@ def select_flash_attn_impl(
     elif impl_type == AttnType.NPU:
         if not HAS_NPU:
             raise ImportError("torch_npu is not available!")
-        return npu_fused_infer_attention_score
+        return npu_attn_forward
 
     elif attn_processor is not None:
         return attn_processor

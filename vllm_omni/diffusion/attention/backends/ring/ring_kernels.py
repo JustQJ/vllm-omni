@@ -266,18 +266,36 @@ def flashinfer_attn_forward(
     return out, lse
 
 
-def npu_attn_forward(q, k, v, softmax_scale=None, layout="BSND"):
+def npu_attn_forward(    
+    q,
+    k,
+    v,
+    dropout_p=0.0,
+    softmax_scale=None,
+    causal=False,
+    window_size=(-1, -1),
+    softcap=None,
+    alibi_slopes=None,
+    return_softmax=False
+):
     assert HAS_NPU, "torch_npu is not available"
-    softmax_scale = q.shape[-1] ** (-0.5)
+    if softmax_scale is None:
+        softmax_scale = q.shape[-1] ** (-0.5)
+    causal_mask = None
+    if causal:
+        causal_mask = torch.triu(
+            torch.ones(q.shape[1], k.shape[1], dtype=torch.uint8, device=q.device),
+            diagonal=1
+        )
     block_out, block_lse = torch_npu.npu_fused_infer_attention_score(
         q,
         k,
         v,
         num_heads=q.shape[-2],
-        input_layout=layout,
+        num_key_value_heads=k.shape[-2],
+        input_layout="BSND",
         scale=softmax_scale,
         softmax_lse_flag=True,
-        pre_tokens=65535,
-        next_tokens=65535,
+        atten_mask=causal_mask,
     )
     return block_out, block_lse.squeeze(dim=-1)

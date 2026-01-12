@@ -10,7 +10,7 @@ import torch
 from vllm.logger import init_logger
 
 # import torch.distributed as dist # Not used directly here, but good practice if needed
-from vllm_omni.diffusion.attention.backends.ring.ring_globals import HAS_FLASH_ATTN
+from vllm_omni.diffusion.attention.backends.ring.ring_globals import HAS_FLASH_ATTN, HAS_NPU
 from vllm_omni.diffusion.attention.backends.ring.ring_selector import AttnType
 from vllm_omni.diffusion.attention.parallel.base import (
     ParallelAttentionContext,
@@ -117,11 +117,13 @@ class RingParallelAttention:
                 backend_pref = None
 
         # Fallback for FP32 or if Flash Attention is not available
-        if query.dtype == torch.float32 or not HAS_FLASH_ATTN:
+        if (query.dtype == torch.float32 or not HAS_FLASH_ATTN) and not HAS_NPU:
             if not HAS_FLASH_ATTN and backend_pref != "sdpa":
                 logger = init_logger(__name__)
                 logger.warning_once("Flash Attention is not available! Force enabling SDPA.")
             backend_pref = "sdpa"
+        elif HAS_NPU:
+            backend_pref = "npu"
 
         # Extract joint tensors
         joint_key, joint_value = None, None
@@ -163,7 +165,7 @@ class RingParallelAttention:
             deterministic=False,
             # return_attn_probs=False, # Removed as it might not be supported in signature
             group=self._sp_group.ring_group,
-            attn_type=AttnType.FA,
+            attn_type=AttnType.FA if backend_pref != "npu" else AttnType.NPU,
             joint_tensor_key=joint_key,
             joint_tensor_value=joint_value,
             joint_strategy=joint_strategy,
