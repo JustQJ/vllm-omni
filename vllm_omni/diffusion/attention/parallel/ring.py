@@ -10,7 +10,7 @@ import torch
 from vllm.logger import init_logger
 
 # import torch.distributed as dist # Not used directly here, but good practice if needed
-from vllm_omni.diffusion.attention.backends.ring.ring_globals import HAS_FLASH_ATTN, HAS_NPU
+from vllm_omni.diffusion.attention.backends.ring.ring_globals import HAS_FLASH_ATTN
 from vllm_omni.diffusion.attention.backends.ring.ring_selector import AttnType
 from vllm_omni.diffusion.attention.parallel.base import (
     ParallelAttentionContext,
@@ -20,6 +20,7 @@ from vllm_omni.diffusion.distributed.group_coordinator import SequenceParallelGr
 
 # from vllm_omni.diffusion.attention.backends.ring_selector import AttnType # Already imported above
 from vllm_omni.diffusion.forward_context import get_forward_context
+from vllm_omni.utils import is_npu
 
 if TYPE_CHECKING:
     from vllm_omni.diffusion.attention.backends.abstract import AttentionMetadata
@@ -117,12 +118,12 @@ class RingParallelAttention:
                 backend_pref = None
 
         # Fallback for FP32 or if Flash Attention is not available
-        if (query.dtype == torch.float32 or not HAS_FLASH_ATTN) and not HAS_NPU:
+        if (query.dtype == torch.float32 or not HAS_FLASH_ATTN) and not is_npu():
             if not HAS_FLASH_ATTN and backend_pref != "sdpa":
                 logger = init_logger(__name__)
                 logger.warning_once("Flash Attention is not available! Force enabling SDPA.")
             backend_pref = "sdpa"
-        elif HAS_NPU:
+        elif is_npu():
             backend_pref = "npu"
 
         # Extract joint tensors

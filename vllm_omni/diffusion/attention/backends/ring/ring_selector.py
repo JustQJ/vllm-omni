@@ -19,8 +19,8 @@ from .ring_kernels import (
     flash_attn_forward,
     flash_attn_forward_aiter,
     flashinfer_attn_forward,
+    npu_attn_forward,
     pytorch_attn_forward,
-    npu_attn_forward
 )
 
 if HAS_SAGE_ATTENTION:
@@ -28,9 +28,6 @@ if HAS_SAGE_ATTENTION:
 
 if HAS_SPARSE_SAGE_ATTENTION:
     from spas_sage_attn.autotune import SparseAttentionMeansim
-
-if HAS_NPU:
-    from torch_npu import npu_fused_infer_attention_score
 
 
 class AttnType(Enum):
