@@ -162,6 +162,7 @@ class AsyncOmni(OmniBase):
                     "cache_backend": cache_backend,
                     "cache_config": cache_config,
                     "enable_cpu_offload": kwargs.get("enable_cpu_offload", False),
+                    "enforce_eager": kwargs.get("enforce_eager", False),
                 },
                 "final_output": True,
                 "final_output_type": "image",
