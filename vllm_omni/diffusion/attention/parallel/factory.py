@@ -15,6 +15,7 @@ def build_parallel_attention_strategy(
     scatter_idx: int,
     gather_idx: int,
     use_sync: bool,
+    disable_sp: bool = False,
 ) -> ParallelAttentionStrategy:
     """Select a parallel attention strategy based on current diffusion config.
 
@@ -23,6 +24,8 @@ def build_parallel_attention_strategy(
     - Parallel attention selection is handled here, based on distributed config
       and initialized process groups.
     """
+    if disable_sp:
+        return NoParallelAttention()
     try:
         cfg = get_forward_context().omni_diffusion_config
         p = cfg.parallel_config

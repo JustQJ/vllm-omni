@@ -250,6 +250,7 @@ class ZImageAttention(nn.Module):
         num_kv_heads: int,
         qk_norm: bool = True,
         eps: float = 1e-6,
+        disable_sp: bool = False,
     ) -> None:
         super().__init__()
         self.dim = dim
@@ -291,6 +292,7 @@ class ZImageAttention(nn.Module):
             softmax_scale=1.0 / (self.head_dim**0.5),
             causal=False,
             num_kv_heads=self.to_qkv.num_kv_heads,
+            disable_sp=disable_sp,
         )
         self.rope = RotaryEmbedding(is_neox_style=False)
 
@@ -374,6 +376,7 @@ class ZImageTransformerBlock(nn.Module):
         norm_eps: float,
         qk_norm: bool,
         modulation=True,
+        disable_sp=False,
     ):
         super().__init__()
         self.dim = dim
@@ -384,6 +387,7 @@ class ZImageTransformerBlock(nn.Module):
             num_kv_heads=n_kv_heads,
             qk_norm=qk_norm,
             eps=1e-5,
+            disable_sp=disable_sp,
         )
 
         self.feed_forward = FeedForward(dim=dim, hidden_dim=int(dim / 3 * 8))
@@ -648,6 +652,7 @@ class ZImageTransformer2DModel(CachedTransformer):
                     norm_eps,
                     qk_norm,
                     modulation=True,
+                    disable_sp=True,
                 )
                 for layer_id in range(n_refiner_layers)
             ]
@@ -662,6 +667,7 @@ class ZImageTransformer2DModel(CachedTransformer):
                     norm_eps,
                     qk_norm,
                     modulation=False,
+                    disable_sp=True,
                 )
                 for layer_id in range(n_refiner_layers)
             ]
